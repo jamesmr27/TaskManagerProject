@@ -6,6 +6,8 @@ require('dotenv').config();
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library'); // Import Google Auth Library
+
 
 const app = express();
 app.use(cors());
@@ -30,14 +32,16 @@ const taskSchema = new mongoose.Schema({
 const Task = mongoose.model('Task', taskSchema);
 
 const userSchema = new mongoose.Schema({
-    name: { type: String, required: true }, // Add name field
+    name: { type: String, required: true },
     userName: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: function () { return !this.googleId; } }, // Required only if googleId is not present
+    googleId: { type: String }, // Add a field to store the Google ID
 });
 const User = mongoose.model('User', userSchema);
 
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+const client = new OAuth2Client('823097345146-785ql6huf8qaf0i9jjolh12uqqjda3m5.apps.googleusercontent.com'); // Replace with your Client ID
 
 
 // CRUD API routes
@@ -138,6 +142,39 @@ app.post('/login', async (req, res) => {
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
     res.json({ token });
   });
+
+// Google Login Route
+app.post('/google-login', async (req, res) => {
+  const { token } = req.body;
+
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: '823097345146-785ql6huf8qaf0i9jjolh12uqqjda3m5.apps.googleusercontent.com', // Replace with your Client ID
+    });
+    const payload = ticket.getPayload();
+
+    // Check if user exists in the database
+    let user = await User.findOne({ userName: payload.email });
+    if (!user) {
+      // Create a new user if they don't exist
+      user = new User({
+        name: payload.name,
+        userName: payload.email,
+        googleId: payload.sub, // Store the unique Google ID
+      });
+      await user.save();
+    }
+
+    // Generate a JWT token for the user
+    const jwtToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token: jwtToken });
+  } catch (err) {
+    console.error('Error verifying Google token:', err);
+    res.status(401).json({ message: 'Invalid Google token' });
+  }
+});
+
 
 
 // Start server

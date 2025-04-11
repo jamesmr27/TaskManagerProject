@@ -6,7 +6,14 @@ interface Task {
   _id: string;
   title: string;
   description: string;
-  completed: boolean; // Added completed property
+  completed: boolean;
+}
+
+interface Event {
+  id: string;
+  summary: string;
+  start: { dateTime?: string; date?: string };
+  end: { dateTime?: string; date?: string };
 }
 
 interface TaskDashboardProps {
@@ -15,80 +22,94 @@ interface TaskDashboardProps {
 
 function TaskDashboard({ setToken }: TaskDashboardProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [completed, setCompleted] = useState(false); // New state for completed
+  const [completed, setCompleted] = useState(false);
   const [editing, setEditing] = useState(false);
   const [taskId, setTaskId] = useState('');
 
   useEffect(() => {
     // Fetch tasks from the server
     axios.get('http://localhost:5005/tasks', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } // Include token
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
-    .then(response => setTasks(response.data));
+    .then(response => setTasks(response.data))
+    .catch(err => console.error('Error fetching tasks:', err));
+
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token'); // Remove token from localStorage
-    setToken(null); // Reset token state in App
+    localStorage.removeItem('token');
+    setToken(null);
   };
 
   const createTask = () => {
-    axios.post('http://localhost:5005/tasks', { title, description, completed }, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } // Include token
-    })
-    .then((response) => {
-      setTasks((prevTasks) => [...prevTasks, response.data]); // Add the new task to the existing tasks
-      setTitle('');
-      setDescription('');
-      setCompleted(false);
-    })
-    .catch((err) => {
-      console.error('Error creating task:', err);
-      alert('Failed to create task.');
-    });
+    axios
+      .post(
+        'http://localhost:5005/tasks',
+        { title, description, completed },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }
+      )
+      .then((response) => {
+        setTasks((prevTasks) => [...prevTasks, response.data]);
+        setTitle('');
+        setDescription('');
+        setCompleted(false);
+      })
+      .catch((err) => {
+        console.error('Error creating task:', err);
+        alert('Failed to create task.');
+      });
   };
 
   const editTask = () => {
-    axios.put(`http://localhost:5005/tasks/${taskId}`, { title, description, completed }, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } // Include token
-    })
-    .then((response) => {
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          task._id === taskId ? response.data : task // Replace the edited task with the updated one
-        )
-      );
-      setTitle('');
-      setDescription('');
-      setCompleted(false);
-      setEditing(false);
-    })
-    .catch((err) => {
-      console.error('Error editing task:', err);
-      alert('Failed to edit task.');
-    });
+    axios
+      .put(
+        `http://localhost:5005/tasks/${taskId}`,
+        { title, description, completed },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }
+      )
+      .then((response) => {
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task._id === taskId ? response.data : task
+          )
+        );
+        setTitle('');
+        setDescription('');
+        setCompleted(false);
+        setEditing(false);
+      })
+      .catch((err) => {
+        console.error('Error editing task:', err);
+        alert('Failed to edit task.');
+      });
   };
 
   const deleteTask = (id: string) => {
-    axios.delete(`http://localhost:5005/tasks/${id}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } // Include token
-    })
-    .then(() => {
-      setTasks((prevTasks) => prevTasks.filter((task) => task._id !== id)); // Remove the deleted task
-      console.log('Task Deleted');
-    })
-    .catch((err) => {
-      console.error('Error deleting task:', err);
-      alert('Failed to delete task.');
-    });
+    axios
+      .delete(`http://localhost:5005/tasks/${id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      })
+      .then(() => {
+        setTasks((prevTasks) => prevTasks.filter((task) => task._id !== id));
+        console.log('Task Deleted');
+      })
+      .catch((err) => {
+        console.error('Error deleting task:', err);
+        alert('Failed to delete task.');
+      });
   };
 
   const startEdit = (task: Task) => {
     setTitle(task.title);
     setDescription(task.description);
-    setCompleted(task.completed); // Set completed state
+    setCompleted(task.completed);
     setTaskId(task._id);
     setEditing(true);
   };
@@ -106,7 +127,9 @@ function TaskDashboard({ setToken }: TaskDashboardProps) {
           </button>
         </div>
         <div className="bg-[#AFDDE5] p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold text-[#024950] mb-4">{editing ? 'Edit Task' : 'Create Task'}</h2>
+          <h2 className="text-xl font-bold text-[#024950] mb-4">
+            {editing ? 'Edit Task' : 'Create Task'}
+          </h2>
           <input
             type="text"
             placeholder="Task Title"
@@ -137,12 +160,15 @@ function TaskDashboard({ setToken }: TaskDashboardProps) {
             {editing ? 'Update Task' : 'Create Task'}
           </button>
         </div>
+        <h2 className="text-2xl font-bold text-[#AFDDE5] mt-8">Your Tasks</h2>
         <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
           {tasks.map((task) => (
             <li key={task._id} className="bg-[#AFDDE5] p-4 rounded-lg shadow-md">
               <h3 className="text-lg font-bold text-[#024950]">{task.title}</h3>
               <p className="text-[#024950]">{task.description}</p>
-              <p className="text-sm text-[#964734]">Status: {task.completed ? 'Completed' : 'Incomplete'}</p>
+              <p className="text-sm text-[#964734]">
+                Status: {task.completed ? 'Completed' : 'Incomplete'}
+              </p>
               <div className="flex space-x-4 mt-4">
                 <button
                   onClick={() => startEdit(task)}
@@ -160,6 +186,7 @@ function TaskDashboard({ setToken }: TaskDashboardProps) {
             </li>
           ))}
         </ul>
+
       </div>
     </div>
   );

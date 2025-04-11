@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google'; // Import Google Login
+import {jwtDecode} from 'jwt-decode'; // Decode Google JWT
 import './App.css';
 
 interface LoginProps {
@@ -23,6 +25,24 @@ function Login({ setToken }: LoginProps) {
     } catch (err) {
       alert('Error logging in. Please check your credentials.');
     }
+  };
+
+  const handleGoogleLoginSuccess = (credentialResponse: any) => {
+    const decoded: any = jwtDecode(credentialResponse.credential); // Decode Google JWT
+    const googleToken = credentialResponse.credential;
+
+    // Optionally, send the Google token to your backend for verification
+    axios.post('http://localhost:5005/google-login', { token: googleToken })
+      .then((response) => {
+        const token = response.data.token;
+        localStorage.setItem('token', token);
+        setToken(token);
+        navigate('/dashboard');
+      })
+      .catch((err) => {
+        console.error('Google login failed:', err);
+        alert('Google login failed. Please try again.');
+      });
   };
 
   return (
@@ -62,6 +82,14 @@ function Login({ setToken }: LoginProps) {
             Login
           </button>
         </form>
+        <div className="mt-6">
+          <GoogleLogin
+            onSuccess={handleGoogleLoginSuccess}
+            onError={() => {
+              alert('Google login failed. Please try again.');
+            }}
+          />
+        </div>
         <p className="mt-4 text-sm text-center text-[#024950]">
           Don't have an account?{' '}
           <Link to="/signup" className="text-[#964734] hover:underline">
