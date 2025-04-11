@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import Login from './Login';
 import Signup from './Signup.tsx';
 import TaskDashboard from './TaskDashboard';
-
+import './App.css';
 
 
 function App() {

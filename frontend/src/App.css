@@ -1,9 +1,19 @@
 @import "tailwindcss";
+
+body {
+  background-color: #003135; /* Dark teal background */
+  color: #2a393b; /* Light teal text color for readability */
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif; /* Optional: Set a global font */
+}
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  background-color: transparent; /* Ensure this doesn't override the body background */
 }
 
 .logo {
