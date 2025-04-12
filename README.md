@@ -6,7 +6,7 @@
 -------------------------------------------------------------------------------------------------------------------------------------------------
 AI Citation
 
-AI was used as a tool to help develop this project.
+AI was used as a tool to help develop parts of this project.
 ChatGPT and Github Copilot were used
 
 Assistance with general boilerplate set up and idea gathering was done with
